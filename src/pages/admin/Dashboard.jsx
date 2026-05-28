@@ -444,16 +444,14 @@ const AdminDashboard = () => {
       }, "");
 
       topScorersList = sheetEmployees
-        .filter(emp => emp.endDate === latestDateStr)
         .map(emp => ({
           name: emp.name,
-          workDone: parseFloat(emp.actualWorkDone) || 0,  // Column E (index 4)
-          totalTasks: parseFloat(emp.target) || 0,        // Column D (index 3)
-          donePct: parseFloat(String(emp.weeklyWorkDone || "0").replace('%', '').trim()) || 0, // Column F (index 5)
-          onTimePct: parseFloat(String(emp.weeklyWorkDoneOnTime || "0").replace('%', '').trim()) || 0, // Column G (index 6)
-          allPending: parseFloat(emp.allPendingTillDate) || 0 // Column J (index 9)
+          workDone: parseFloat(emp.actualWorkDone) || 0,
+          donePct: parseFloat(String(emp.weeklyWorkDone || "0").replace('%', '').trim()) || 0,
+          onTimePct: parseFloat(String(emp.weeklyWorkDoneOnTime || "0").replace('%', '').trim()) || 0,
+          allPending: parseFloat(emp.allPendingTillDate) || 0
         }))
-        .filter(emp => emp.totalTasks > 0) // Exclude if 0 tasks in Column D
+        .filter(emp => emp.name && String(emp.name).trim() !== "")
         .sort((a, b) => {
           // 1. Primary: Lowest Weekly Done % (Column F)
           if (a.donePct !== b.donePct) {
@@ -463,16 +461,15 @@ const AdminDashboard = () => {
           if (a.workDone !== b.workDone) {
             return a.workDone - b.workDone;
           }
-          // 3. Tertiary (Tie on F & E): Lowest Weekly Done On Time % (Column G)
+          // 3. Tertiary: Lowest Weekly Done On Time %
           if (a.onTimePct !== b.onTimePct) {
             return a.onTimePct - b.onTimePct;
           }
-          // 4. Quaternary: Highest All Pending Till Date (Column J)
+          // 4. Quaternary: Highest All Pending Till Date
           if (b.allPending !== a.allPending) {
-            return b.allPending - a.allPending; // Higher is worse
+            return b.allPending - a.allPending;
           }
-          // 5. Quinary: Higher total tasks/target (Column D) makes it worse for the same low performance
-          return b.totalTasks - a.totalTasks;
+          return 0;
         })
         .slice(0, 5);
     }
@@ -530,8 +527,9 @@ const AdminDashboard = () => {
   }, [sheetEmployees, columnLabels]);
 
   const topScorersData = useMemo(() => topScorers.map((emp) => {
-    const val = emp.donePct ?? emp.score ?? 0;
-    return isNaN(val) ? 0 : val;
+    // Use allPending as chart value — always a real number, prevents HalfCircleChart total===0
+    const val = emp.allPending ?? emp.workDone ?? 1;
+    return isNaN(val) || val === 0 ? 1 : val;
   }), [topScorers]);
   const topScorersLabels = useMemo(() => topScorers.map((emp) => emp.name), [topScorers]);
   const topBestData = useMemo(() => topBestPerformers.map(emp => {

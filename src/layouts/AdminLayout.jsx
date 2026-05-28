@@ -241,7 +241,7 @@ const AdminLayout = () => {
                 <ClipboardList size={20} className="shrink-0" />
                 <span className="truncate">Pending Tasks</span>
               </Link> */}
-              <Link
+              {/* <Link
                 to={(user?.role === 'admin' || user?.role === 'superadmin') ? "/admin/kpi-kra" : "/user/kpi-kra"}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm sm:text-base font-medium ${(isActive('/admin/kpi-kra') || isActive('/user/kpi-kra'))
                     ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
@@ -251,7 +251,7 @@ const AdminLayout = () => {
               >
                 <LineChart size={20} className="shrink-0" />
                 <span className="truncate">KPI & KRA</span>
-              </Link>
+              </Link> */}
             </nav>
           </div>
         </aside>

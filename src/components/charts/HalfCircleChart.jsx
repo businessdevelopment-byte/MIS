@@ -73,7 +73,7 @@ const HalfCircleChart = ({ data, labels, colors }) => {
               />
               <span className="text-gray-600 truncate flex-1">{label}</span>
               <span className="text-gray-800 font-semibold flex-shrink-0">
-                {data[index]}%
+                {((data[index] / total) * 100).toFixed(1)}%
               </span>
             </div>
           ))}

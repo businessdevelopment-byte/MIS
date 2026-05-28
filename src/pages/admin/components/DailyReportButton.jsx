@@ -249,8 +249,18 @@ const DailyReportButton = ({ dataSheetRows }) => {
             nameColMap.forEach((personMap, colIndex) => {
               const rowPerson = String(r[colIndex] || "").trim().replace(/\s+/g, ' ').toLowerCase();
               if (!rowPerson) return;
-              const configs = personMap.get(rowPerson);
-              if (!configs) return; // Fast skip — no match for this person in this column
+              let configs = personMap.get(rowPerson);
+
+              // Fallback: person not in Data sheet config → still include if planned today
+              if (!configs) {
+                const firstConfigs = personMap.values().next().value;
+                if (!firstConfigs || !firstConfigs[0]?.plannedRef) return;
+                const testPlanned = r[firstConfigs[0].plannedRef.colIndex];
+                const testDate = parseDate(testPlanned);
+                const testMidnight = testDate ? new Date(testDate.getFullYear(), testDate.getMonth(), testDate.getDate()) : null;
+                if (!testMidnight || testMidnight.getTime() !== todayAtMidnight.getTime()) return;
+                configs = firstConfigs; // use first config's column refs for unmatched person
+              }
 
               configs.forEach(config => {
                 if (!config.nameRef || absoluteIdx < config.nameRef.startRowIndex) return;
@@ -282,7 +292,11 @@ const DailyReportButton = ({ dataSheetRows }) => {
                     let progress = 0;
                     if (actualVal) { status = 'Completed'; progress = 100; }
 
-                    if (allData[config.groupName].length < 1000) {
+                    // Today's entries: no cap — always include
+                    // Past pending entries: cap at 500 to avoid memory issues
+                    const isTodayEntry = isCompletedToday || isPlannedToday;
+                    const pastPendingCount = allData[config.groupName].filter(e => !e._isToday).length;
+                    if (isTodayEntry || pastPendingCount < 500) {
                       allData[config.groupName].push({
                         id: config.idx,
                         personName: String(r[config.nameRef.colIndex] || "").trim(),
@@ -293,7 +307,8 @@ const DailyReportButton = ({ dataSheetRows }) => {
                         delay: formatDuration(delayVal),
                         progress: progress,
                         status: status,
-                        date: formatDate(plannedVal) || todayStr
+                        date: formatDate(plannedVal) || todayStr,
+                        _isToday: isTodayEntry
                       });
                     }
                   }
